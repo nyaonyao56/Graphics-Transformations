@@ -24,7 +24,7 @@ namespace asgn5v1
 		double[,] vertices;
 		double[,] scrnpts;
 		double[,] ctrans = new double[4,4];  //your main transformation matrix
-        string axis;
+        	string axis;
 		private ImageList tbimages;
 		private ToolBar toolBar1;
 		private ToolBarButton transleftbtn;
@@ -48,9 +48,9 @@ namespace asgn5v1
 		private ToolBarButton toolBarButton5;
 		private ToolBarButton resetbtn;
 		private ToolBarButton exitbtn;
-        private Timer timer;
+        	private Timer timer;
 
-        int[,] lines;
+        	int[,] lines;
 
 		public Transformer()
 		{
