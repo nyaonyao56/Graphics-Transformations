@@ -15,43 +15,42 @@ namespace asgn5v1
 	public class Transformer : System.Windows.Forms.Form
 	{
 		private System.ComponentModel.IContainer components;
-		//private bool GetNewData();
+        //private bool GetNewData();
 
-		// basic data for Transformer
-
+        // basic data for Transformer
 		int numpts = 0;
 		int numlines = 0;
 		bool gooddata = false;		
 		double[,] vertices;
 		double[,] scrnpts;
 		double[,] ctrans = new double[4,4];  //your main transformation matrix
-        double x; // width
-        double y; // height
-        bool flag = true; // flag that sets whether to rotate continously or not based on true/false
-		private System.Windows.Forms.ImageList tbimages;
-		private System.Windows.Forms.ToolBar toolBar1;
-		private System.Windows.Forms.ToolBarButton transleftbtn;
-		private System.Windows.Forms.ToolBarButton transrightbtn;
-		private System.Windows.Forms.ToolBarButton transupbtn;
-		private System.Windows.Forms.ToolBarButton transdownbtn;
-		private System.Windows.Forms.ToolBarButton toolBarButton1;
-		private System.Windows.Forms.ToolBarButton scaleupbtn;
-		private System.Windows.Forms.ToolBarButton scaledownbtn;
-		private System.Windows.Forms.ToolBarButton toolBarButton2;
-		private System.Windows.Forms.ToolBarButton rotxby1btn;
-		private System.Windows.Forms.ToolBarButton rotyby1btn;
-		private System.Windows.Forms.ToolBarButton rotzby1btn;
-		private System.Windows.Forms.ToolBarButton toolBarButton3;
-		private System.Windows.Forms.ToolBarButton rotxbtn;
-		private System.Windows.Forms.ToolBarButton rotybtn;
-		private System.Windows.Forms.ToolBarButton rotzbtn;
-		private System.Windows.Forms.ToolBarButton toolBarButton4;
-		private System.Windows.Forms.ToolBarButton shearrightbtn;
-		private System.Windows.Forms.ToolBarButton shearleftbtn;
-		private System.Windows.Forms.ToolBarButton toolBarButton5;
-		private System.Windows.Forms.ToolBarButton resetbtn;
-		private System.Windows.Forms.ToolBarButton exitbtn;
-		int[,] lines;
+        string axis;
+		private ImageList tbimages;
+		private ToolBar toolBar1;
+		private ToolBarButton transleftbtn;
+		private ToolBarButton transrightbtn;
+		private ToolBarButton transupbtn;
+		private ToolBarButton transdownbtn;
+		private ToolBarButton toolBarButton1;
+		private ToolBarButton scaleupbtn;
+		private ToolBarButton scaledownbtn;
+		private ToolBarButton toolBarButton2;
+		private ToolBarButton rotxby1btn;
+		private ToolBarButton rotyby1btn;
+		private ToolBarButton rotzby1btn;
+		private ToolBarButton toolBarButton3;
+		private ToolBarButton rotxbtn;
+		private ToolBarButton rotybtn;
+		private ToolBarButton rotzbtn;
+		private ToolBarButton toolBarButton4;
+		private ToolBarButton shearrightbtn;
+		private ToolBarButton shearleftbtn;
+		private ToolBarButton toolBarButton5;
+		private ToolBarButton resetbtn;
+		private ToolBarButton exitbtn;
+        private Timer timer;
+
+        int[,] lines;
 
 		public Transformer()
 		{
@@ -238,7 +237,13 @@ namespace asgn5v1
             this.rotxby1btn.ImageIndex = 6;
             this.rotxby1btn.Name = "rotxby1btn";
             this.rotxby1btn.ToolTipText = "rotate about x by 1";
-            // 
+            //
+            // timer
+            //
+            this.timer = new Timer();
+            this.timer.Interval = 1;
+            this.timer.Tick += new EventHandler(TimerTick);
+            //
             // rotyby1btn
             // 
             this.rotyby1btn.ImageIndex = 7;
@@ -387,17 +392,17 @@ namespace asgn5v1
 		}
 
         void Init() {
-            x = this.Width / 2;
-            y = this.Height / 2;
+            double width = this.Width / 2;
+            double height = this.Height / 2;
             double xAxis = vertices[0, 0];
             double yAxis = vertices[0, 1];
-            double scaleFactor = y / (2 * yAxis);
+            double scaleFactor = height / (2 * yAxis);
 
             double[,] tnet = new double[4, 4];
 
             tnet = multiplyMatrix(translationMatrix(-xAxis, -yAxis, 0), reflectionMatrix("xz"));
             tnet = multiplyMatrix(tnet, scalingMatrix(scaleFactor, scaleFactor, scaleFactor));
-            this.ctrans = multiplyMatrix(tnet, translationMatrix(x, y, 0));
+            this.ctrans = multiplyMatrix(tnet, translationMatrix(width, height, 0));
         }
 
         double[,] translationMatrix(double x, double y, double z) {
@@ -466,6 +471,18 @@ namespace asgn5v1
 
             return rotationRows;
 
+        }
+
+        double[,] shearMatrix(string direction) {
+            double[,] shearRow = new double[4, 4];
+            setIdentity(shearRow, 4, 4);
+            if (direction.Equals("right")) {
+                shearRow[1, 0] = -0.1d;
+            }else if(direction.Equals("left")) {
+                shearRow[1, 0] = 0.1d;
+            }
+
+            return shearRow;
         }
 
         double[,] multiplyMatrix(double[,] matrixOne, double[,] matrixTwo) {
@@ -591,6 +608,7 @@ namespace asgn5v1
 
 		private void toolBar1_ButtonClick(object sender, System.Windows.Forms.ToolBarButtonClickEventArgs e)
 		{
+            timer.Stop();
 			if (e.Button == transleftbtn)
 			{
                 ctrans = multiplyMatrix(ctrans, translationMatrix(-75, 0, 0));
@@ -621,62 +639,66 @@ namespace asgn5v1
 			}
 			if (e.Button == scaledownbtn) 
 			{
-                ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], 0));
+                ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]));
                 ctrans = multiplyMatrix(ctrans, scalingMatrix(0.9d, 0.9d, 0.9d));
-                ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], 0));
+                ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]));
 				Refresh();
 			}
 			if (e.Button == rotxby1btn) 
 			{
-                ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], 0));
+                ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]));
                 ctrans = multiplyMatrix(ctrans, rotationMatrix("x"));
-                ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], 0));
+                ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]));
                 Refresh();
 			}
 			if (e.Button == rotyby1btn) 
 			{
-                ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], 0));
+                ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]));
                 ctrans = multiplyMatrix(ctrans, rotationMatrix("y"));
-                ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], 0));
+                ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]));
                 Refresh();
 			}
 			if (e.Button == rotzby1btn) 
 			{
-                ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], 0));
+                ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]));
                 ctrans = multiplyMatrix(ctrans, rotationMatrix("z"));
-                ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], 0));
+                ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]));
                 Refresh();
 			}
 
 			if (e.Button == rotxbtn) 
 			{
-                flag = true;
-                while(flag == true) {
-                    ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], 0));
-                    ctrans = multiplyMatrix(ctrans, rotationMatrix("x"));
-                    ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], 0));
-                    Refresh();
-                    System.Threading.Thread.Sleep(100);
-                }
+                axis = "x";
+                timer.Start();
 			}
 			if (e.Button == rotybtn) 
 			{
-				
+                axis = "y";
+                timer.Start();
 			}
 			
 			if (e.Button == rotzbtn) 
 			{
-				
+                axis = "z";
+                timer.Start();
 			}
 
 			if(e.Button == shearleftbtn)
 			{
-				Refresh();
+                double temp = ctrans[3, 1];
+                ctrans[3, 1] = 0.0d;
+                ctrans = multiplyMatrix(ctrans, shearMatrix("left"));
+                ctrans[3, 1] = temp;
+                Refresh();
 			}
 
 			if (e.Button == shearrightbtn) 
 			{
-				Refresh();
+                double temp = ctrans[3, 1];
+                ctrans[3, 1] = 0.0d;
+                ctrans = multiplyMatrix(ctrans, shearMatrix("right"));
+                ctrans[3, 1] = temp;
+                Refresh();
 			}
 
 			if (e.Button == resetbtn)
@@ -690,6 +712,30 @@ namespace asgn5v1
 			}
 
 		}
+
+        public void TimerTick(object sender, EventArgs e) {
+            switch (axis) {
+                case "x":
+                    ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]));
+                    ctrans = multiplyMatrix(ctrans, rotationMatrix("x"));
+                    ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]));
+                    break;
+                case "y":
+                    ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]));
+                    ctrans = multiplyMatrix(ctrans, rotationMatrix("y"));
+                    ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]));
+                    break;
+                case "z":
+                    ctrans = multiplyMatrix(ctrans, translationMatrix(-scrnpts[0, 0], -scrnpts[0, 1], -scrnpts[0, 2]));
+                    ctrans = multiplyMatrix(ctrans, rotationMatrix("z"));
+                    ctrans = multiplyMatrix(ctrans, translationMatrix(scrnpts[0, 0], scrnpts[0, 1], scrnpts[0, 2]));
+                    break;
+                default:
+                    Console.WriteLine("dodo");
+                    break;
+            }
+            Refresh();
+        }
 
 		
 	}
